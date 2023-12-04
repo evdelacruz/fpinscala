@@ -50,36 +50,36 @@ object List: // `List` companion object. Contains functions for creating and wor
     foldRight(ns, 1.0, _ * _) // `_ * _` is more concise notation for `(x,y) => x * y`; see sidebar
 
   def tail[A](l: List[A]): List[A] = l match
-    case List.Nil => sys.error("List is empty")
-    case List.Cons(head, tail) => tail
+    case Nil => sys.error("List is empty")
+    case Cons(head, tail) => tail
 
   def setHead[A](l: List[A], h: A): List[A] = l match
-    case List.Nil => sys.error("List is empty")
-    case List.Cons(_, tail) => List.Cons(h, tail)
+    case Nil => sys.error("List is empty")
+    case Cons(_, tail) => Cons(h, tail)
 
   @tailrec def drop[A](l: List[A], n: Int): List[A] = l match
-    case List.Nil => List.Nil
-    case List.Cons(_, t) => if n <= 0 then l else drop(t, n - 1)
+    case Nil => Nil
+    case Cons(_, t) => if n <= 0 then l else drop(t, n - 1)
 
   @tailrec def dropWhile[A](l: List[A], f: A => Boolean): List[A] = l match
-    case List.Cons(h, t) if f(h) => dropWhile(t, f)
+    case Cons(h, t) if f(h) => dropWhile(t, f)
     case _ => l
 
   def init[A](l: List[A]): List[A] = l match
-    case List.Cons(h, List.Nil) => List.Nil
-    case List.Cons(h, t) => List.Cons(h, init(t))
+    case Cons(h, Nil) => Nil
+    case Cons(h, t) => Cons(h, init(t))
 
   def length[A](l: List[A]): Int = foldRight(l, 0, (_, length) => length + 1)
 
   @tailrec def foldLeft[A,B](l: List[A], acc: B, f: (B, A) => B): B = l match
-    case List.Nil => acc
-    case List.Cons(h, t) => foldLeft(t, f(acc, h), f)
+    case Nil => acc
+    case Cons(h, t) => foldLeft(t, f(acc, h), f)
 
-  def sumViaFoldLeft(ns: List[Int]): Int = ???
+  def sumViaFoldLeft(ns: List[Int]): Int = foldLeft(ns, 0, _ + _)
 
-  def productViaFoldLeft(ns: List[Double]): Double = ???
+  def productViaFoldLeft(ns: List[Double]): Double = foldLeft(ns, 1.0, _ * _)
 
-  def lengthViaFoldLeft[A](l: List[A]): Int = ???
+  def lengthViaFoldLeft[A](l: List[A]): Int = foldLeft(l, 0, (acc, _) => acc + 1)
 
   def reverse[A](l: List[A]): List[A] = ???
 
