@@ -1,10 +1,16 @@
 package fpinscala.exercises.laziness
 
+import fpinscala.exercises.laziness.LazyList.{cons, empty}
+
+import scala.collection.immutable
+
 enum LazyList[+A]:
   case Empty
   case Cons(h: () => A, t: () => LazyList[A])
 
-  def toList: List[A] = ???
+  def toList: List[A] = this match
+    case Empty => Nil
+    case Cons(h, t) => h() :: t().toList
 
   def foldRight[B](z: => B)(f: (A, => B) => B): B = // The arrow `=>` in front of the argument type `B` means that the function `f` takes its second argument by name and may choose not to evaluate it.
     this match
@@ -19,21 +25,34 @@ enum LazyList[+A]:
     case Empty => None
     case Cons(h, t) => if (f(h())) Some(h()) else t().find(f)
 
-  def take(n: Int): LazyList[A] = ???
+  def take(n: Int): LazyList[A] = this match
+    case Cons(h, t) if n > 0 => Cons(h, () => t().take(n - 1))
+    case _ => Empty
 
-  def drop(n: Int): LazyList[A] = ???
+  def drop(n: Int): LazyList[A] = this match
+    case Empty => Empty
+    case Cons(h, t) if n > 0 => t().drop(n -1)
+    case Cons(h, t) => Cons(h, t)
 
-  def takeWhile(p: A => Boolean): LazyList[A] = ???
+  def takeWhile(p: A => Boolean): LazyList[A] = this match
+    case Cons(h, t) if p(h()) => Cons(h, () => t().takeWhile(p))
+    case _ => Empty
 
-  def forAll(p: A => Boolean): Boolean = ???
+  def takeWhile2(p: A => Boolean): LazyList[A] = foldRight(empty)((a, b) => if p(a) then cons(a, b) else b)
 
-  def headOption: Option[A] = ???
+  def forAll(p: A => Boolean): Boolean = foldRight(true)((a, b) => p(a) && b)
 
-  // 5.7 map, filter, append, flatmap using foldRight. Part of the exercise is
-  // writing your own function signatures.
+  def headOption: Option[A] = foldRight(None: Option[A])((a, _) => Some(a))
+
+  def map[B](f: A => B): LazyList[B] = foldRight(empty)((elem, list) => cons(f(elem), list))
+
+  def filter(f: A => Boolean): LazyList[A] = foldRight(empty)((elem, list) => if f(elem) then cons(elem, list) else list)
+
+  def append[A2 >: A](list: => LazyList[A2]): LazyList[A2] = foldRight(list)(cons(_,_))
+
+  def flatMap[B](f: A => LazyList[B]): LazyList[B] = foldRight(empty)((elem, list) => f(elem).append(list))
 
   def startsWith[B](s: LazyList[B]): Boolean = ???
-
 
 object LazyList:
   def cons[A](hd: => A, tl: => LazyList[A]): LazyList[A] = 
