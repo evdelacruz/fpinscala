@@ -1,6 +1,6 @@
 package fpinscala.exercises.laziness
 
-import fpinscala.exercises.laziness.LazyList.{cons, empty}
+import fpinscala.exercises.laziness.LazyList.{cons, empty, unfold}
 
 import scala.collection.immutable
 
@@ -29,6 +29,11 @@ enum LazyList[+A]:
     case Cons(h, t) if n > 0 => Cons(h, () => t().take(n - 1))
     case _ => Empty
 
+  def takeViaUnfold(n: Int): LazyList[A] = unfold((this, n)):
+    case (Cons(h, t), 1) => Some(h(), (empty, 0))
+    case (Cons(h, t), n) if n > 1 => Some(h(), (t(), n -1))
+    case _ => None
+
   def drop(n: Int): LazyList[A] = this match
     case Empty => Empty
     case Cons(h, t) if n > 0 => t().drop(n -1)
@@ -38,14 +43,20 @@ enum LazyList[+A]:
     case Cons(h, t) if p(h()) => Cons(h, () => t().takeWhile(p))
     case _ => Empty
 
+  def takeWhileViaUnfold(p: A => Boolean): LazyList[A] = unfold(this):
+    case Cons(h, t) if p(h()) => Some(h(), t())
+    case _ => None
+
   def takeWhile2(p: A => Boolean): LazyList[A] = foldRight(empty)((a, b) => if p(a) then cons(a, b) else b)
 
   def forAll(p: A => Boolean): Boolean = foldRight(true)((a, b) => p(a) && b)
 
   def headOption: Option[A] = foldRight(None: Option[A])((a, _) => Some(a))
 
-  def map[B](f: A => B): LazyList[B] = //foldRight(empty)((elem, list) => cons(f(elem), list))
-    LazyList.unfold(this):
+  def map[B](f: A => B): LazyList[B] = foldRight(empty)((elem, list) => cons(f(elem), list))
+
+  def mapViaUnfold[B](f: A => B): LazyList[B] =
+    unfold(this):
       case Cons(h, t) => Some(f(h()), t())
       case _ => None
 
